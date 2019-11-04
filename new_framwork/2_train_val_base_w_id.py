@@ -130,6 +130,8 @@ def main():
                       help='embeddings dim.')
   parser.add_argument('--num_layer', default=1, type=int,
                       help='num_layer')
+  parser.add_argument('--type', default=1, type=int,
+                      help='two layer type')
   parser.add_argument('--att_dim', default=64, type=int,
                       help='Attention transform dim')
   parser.add_argument('--activation_fun', default='leaky_relu', type=str,

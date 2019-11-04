@@ -21,7 +21,8 @@ class Model(nn.Module):
     self.scorer = mp.Scorers(opt)
     self.params_em = self.em_layer.parameters()
     self.params_sco = self.scorer.parameters()
-    self.params_mp = self.mp_layer.parameters()
+    self.mp_layer2 = mp.BaseMean(opt)
+    self.params_mp = list(self.mp_layer.parameters()) + list(self.mp_layer2.parameters())
     self.params = list(self.params_mp) + list(self.params_sco)
     self.optimizer = torch.optim.Adam(self.params, lr=self.lr, weight_decay=opt.weight_decay2)
     self.optimizer_em = torch.optim.Adam(self.params_em, lr=self.lr_em, weight_decay=opt.weight_decay)
@@ -31,6 +32,7 @@ class Model(nn.Module):
     mask = mask.to(self.DEVICE)
     em = self.em_layer(inds)
     em_update = self.mp_layer(em)
+    em_update = self.mp_layer2(em_update)
     scores = self.scorer(em_update[:,1:,:], mask[:,1:])
     return scores
 

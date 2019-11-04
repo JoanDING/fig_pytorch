@@ -17,7 +17,7 @@ from eval_metrics.eval import *
 
 from amazon_men import *
 from amazon_women import *
-from model_att import *
+from model_att_2 import *
 
 
 def train(opt):
@@ -141,7 +141,7 @@ def main():
                       help='num_layer')
   parser.add_argument('--att_dim', default=64, type=int,
                       help='Attention transform dim')
-  parser.add_argument('--type', default=1, type=int,
+  parser.add_argument('--type', default=101, type=int,
                       help='type of attention')
   parser.add_argument('--activation_fun', default='leaky_relu', type=str,
                       help='Activation function')

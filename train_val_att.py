@@ -19,7 +19,6 @@ from amazon_men import *
 from amazon_women import *
 from model_att import *
 
-
 def train(opt):
   print('loading training data...')
   if opt.dataset == 'women':
@@ -56,11 +55,11 @@ def train(opt):
   # print('data test done')
 
   opt.vocab_size = data_train.vocab_size
-  opt.self_att = False
   opt.DEVICE = torch.device("cuda:"+str(opt.gpu) if torch.cuda.is_available() else "cpu")
   # opt.DEVICE = torch.device("cpu")
   print opt
   print('building model')
+
   model = Model(opt).to(opt.DEVICE)
   print('model built')
   iter_cnt = 0
@@ -71,23 +70,21 @@ def train(opt):
   bestap = 0
   bestmrr = 0
   bestrec = 0
-  lr_update = model.lr
   for ep_id in range(opt.max_eps):
     t0 = time.time()
     loss_epoch = 0
-    if ep_id % 100 == 0 and ep_id != 0:
-      lr_update = lr_update*0.5
-      model.optimizer = torch.optim.Adam(model.params,lr=lr_update,weight_decay = opt.weight_decay)
-      print('change learning rate from {} to {}'.format(lr_update*2,lr_update))
     for iter_id, train_batch in enumerate(data_loader_train):
       model.train()
       model.train_step(*train_batch)
       iter_cnt += 1 # place here for viewing the result of first iteration
       loss_epoch += model.loss.data
+      alphas = model.alpha
     t1 = time.time()
     print('Epoch: {}, total iter: {}, loss: {}, time: {}'.format(ep_id,iter_cnt,loss_epoch/(iter_id+1.), t1-t0))
     if ep_id%eval_freq==0:
       print('Eval...Epoch {}'.format(ep_id))
+      print('attention weight sample:')
+      print(alphas[0,:,:,0])
       rank_res = {}
       eval_res = {}
       pre = []
@@ -98,10 +95,6 @@ def train(opt):
       for test_batch in data_loader_test:
         model.eval()
         scores = model.get_output(test_batch[0], test_batch[3])
-        attention_alpha = model.att_layer.alphas
-        #qk = model.att_layer.qk
-        #wq = model.att_layer.wq
-        #wk = model.att_layer.wk
         uid = test_batch[4]
         targets = test_batch[1]
         candidates = test_batch[2]
@@ -126,7 +119,6 @@ def train(opt):
         bestndcg = np.mean(ndcg)
         bestmrr = np.mean(mrr)
       t2 = time.time()
-      print(attention_alpha[0,:,:,0])
       print('best epoch %d: Precision %.4f, Recall %.4f, mAP %.4f, NDCG %.4f, MRR %.4f'%(best_epoch, bestpre, bestrec, bestap, bestndcg, bestmrr))
       print('evaluate time: {}').format(t2-t1)
       #print('rank_list top{}: {}'.format(opt.topk, rank_list[:opt.topk]))
@@ -135,43 +127,49 @@ def train(opt):
 
 def main():
   parser = argparse.ArgumentParser()
-  parser.add_argument('--em_dim', default=64, type=int,
-                      help='embeddings dim.')
-  parser.add_argument('--num_layer', default=1, type=int,
-                      help='num_layer')
+  # attention settings----------------------------------------------------------------
+  parser.add_argument('--activation_att', default='tanh', type=str,
+                      help='activation function for attention')
+  parser.add_argument('--self_att', default=False, type=bool,
+                      help='remove self when calculating attention')
   parser.add_argument('--att_dim', default=64, type=int,
                       help='Attention transform dim')
-  parser.add_argument('--type', default=1, type=int,
-                      help='type of attention')
-  parser.add_argument('--activation_fun', default='leaky_relu', type=str,
-                      help='Activation function')
-  parser.add_argument('--attention_act', default='tanh', type=str,
-                      help='Activation function for attention')
+  parser.add_argument('--attention_model', default=1, type=int,
+                      help='version of attention')
+  parser.add_argument('--dropout_att', default=0, type=float,
+                      help='dropout rate for att.')
+  # general settings -----------------------------------------------------------------
   parser.add_argument('--num_node', default=7, type=int,
-                      help='num of nodes.')
+                      help='Attention softmax temperature.')
   parser.add_argument('--share_scorer', default=0, type=int,
                       help='flag for sharing scorers, 0 or 1')
+  parser.add_argument('--em_dim', default=64, type=int,
+                      help='embeddings dim.')
+  parser.add_argument('--activation_fun', default='leaky_relu', type=str,
+                      help='Activation function')
   parser.add_argument('--classme', default=0, type=int,
                       help='flag for sharing scorers, 0 or 1')
   parser.add_argument('--topk', default=10, type=int,
-                      help='Attention softmax temperature.')
+                      help='topk evaluateion.')
   parser.add_argument('--max_eps', default=500, type=int,
                       help='max epoches')
-  parser.add_argument('--batch_size', default=512, type=int,
+  parser.add_argument('--batch_size', default=256, type=int,
                       help='training and val batch size')
   parser.add_argument('--dataset', default='men', type=str,
                       help='root path of data')
   parser.add_argument('--lr', default=0.002, type=float,
                       help='initial learning rate')
-  parser.add_argument('--lr_att', default=0.002, type=float,
-                      help='initial att learning rate')
+  parser.add_argument('--lr_em', default=0.002, type=float,
+                      help='initial learning rate')
   parser.add_argument('--gpu', default=0, type=int,
-                      help='Attention softmax temperature.')
+                      help='gpu no.')
   parser.add_argument('--dropout', default=0.2, type=float,
-                      help='Atention softmax temperature.')
+                      help='dropout rate')
   parser.add_argument('--weight_decay', default=1e-6, type=float,
                       help='weight_decay')
-  parser.add_argument('--weight_decay_att', default=2e-6, type=float,
+  parser.add_argument('--weight_decay2', default=5e-5, type=float,
+                      help='weight_decay2')
+  parser.add_argument('--weight_decay_att', default=5e-4, type=float,
                       help='weight_decay_att')
   parser.add_argument('--checkpoint', default='', type=str,
                       help='checkpoint')
@@ -180,11 +178,5 @@ def main():
   train(opt)
 
 if __name__ == '__main__':
-    np.random.seed(2016)
-    torch.manual_seed(2016)
-    torch.cuda.manual_seed_all(2016)
     main()
-
-
-
 

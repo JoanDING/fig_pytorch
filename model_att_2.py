@@ -3,8 +3,8 @@ import torch.nn as nn
 import torchvision.models as model
 from torch.nn import functional as F
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
-
 import message_passing as mp
+from attention_module import *
 import pdb
 
 class Model(nn.Module):
@@ -17,20 +17,31 @@ class Model(nn.Module):
     self.lr = opt.lr
     self.lr_em = opt.lr_em
     self.em_layer = nn.Embedding(vocab_size, em_dim)
-    self.mp_layer = mp.BaseMean(opt)
+    if opt.attention_model == 1:
+        self.att_layer1 = ATT1(opt)
+        self.att_layer2 = ATT1(opt)
+    elif opt.attention_model == 2:
+        self.att_layer1 = ATT2(opt)
+        self.att_layer2 = ATT2(opt)
+    elif opt.attention_model == 3:
+        self.att_layer1 = ATT3(opt)
+        self.att_layer2 = ATT3(opt)
     self.scorer = mp.Scorers(opt)
     self.params_em = self.em_layer.parameters()
     self.params_sco = self.scorer.parameters()
-    self.params_mp = self.mp_layer.parameters()
-    self.params = list(self.params_mp) + list(self.params_sco)
-    self.optimizer = torch.optim.Adam(self.params, lr=self.lr, weight_decay=opt.weight_decay2)
+    self.params_att = list(self.att_layer1.parameters()) + list(self.att_layer2.parameters())
+    self.optimizer_sco = torch.optim.Adam(self.params_sco, lr=self.lr, weight_decay=opt.weight_decay2)
+    self.optimizer_att = torch.optim.Adam(self.params_att, lr=self.lr, weight_decay=opt.weight_decay_att)
     self.optimizer_em = torch.optim.Adam(self.params_em, lr=self.lr_em, weight_decay=opt.weight_decay)
 
   def get_output(self, inds, mask):
     inds = inds.to(self.DEVICE)
     mask = mask.to(self.DEVICE)
     em = self.em_layer(inds)
-    em_update = self.mp_layer(em)
+    em_update = self.att_layer1(em)
+    em_update = self.att_layer2(em_update)
+    self.alpha1 = self.att_layer1.alphas
+    self.alpha2 = self.att_layer2.alphas
     scores = self.scorer(em_update[:,1:,:], mask[:,1:])
     return scores
 
@@ -50,9 +61,11 @@ class Model(nn.Module):
     mask_pos = mask_pos.to(self.DEVICE)
     mask_neg = mask_neg.to(self.DEVICE)
     loss = self.get_loss(pos, neg, mask_pos, mask_neg)
-    self.optimizer.zero_grad()
+    self.optimizer_sco.zero_grad()
     self.optimizer_em.zero_grad()
+    #self.optimizer_att.zero_grad()
     loss.backward()
-    self.optimizer.step()
+    self.optimizer_sco.step()
     self.optimizer_em.step()
+    #self.optimizer_att.step()
 

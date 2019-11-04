@@ -5,6 +5,123 @@ from torch.nn import functional as F
 import pdb
 
 
+class BaseMean_w_id_6(nn.Module):
+  # output: bs*6*128
+  def __init__(self, opt):
+    super(BaseMean_w_id_6, self).__init__()
+    if opt.activation_fun == 'leaky_relu':
+        self.activation_function = nn.LeakyReLU()
+    self.drop = nn.Dropout(opt.dropout)
+    self.em_dim = opt.em_dim
+
+  def forward(self, embeddings):
+    mu = embeddings.mean(dim=1,keepdim=True)
+    mu_exp = mu.expand_as(embeddings)
+    adj_matrix = embeddings * mu_exp
+    adj_matrix = self.activation_function(adj_matrix)
+    adj_matrix = self.drop(adj_matrix)
+
+    out_embeddings = adj_matrix[:,1:,:]
+    return out_embeddings
+
+class BaseMean_w_id_5(nn.Module):
+  # output: bs*6*128
+  def __init__(self, opt):
+    super(BaseMean_w_id_5, self).__init__()
+    if opt.activation_fun == 'leaky_relu':
+        self.activation_function = nn.LeakyReLU()
+    self.drop = nn.Dropout(opt.dropout)
+    self.em_dim = opt.em_dim
+    self.layer_norm = nn.LayerNorm(self.em_dim)
+
+  def forward(self, embeddings):
+    u_embeddings = embeddings[:,0]
+    i_embeddings = embeddings[:,1]
+    a_embeddings = embeddings[:,2:]
+    u_embeddings = torch.unsqueeze(u_embeddings, dim = -2)
+    i_embeddings = torch.unsqueeze(i_embeddings, dim = -2)
+
+    ua_embeddings = torch.cat((u_embeddings,a_embeddings),dim = -2)
+    mu = ua_embeddings.mean(dim=1,keepdim=True)
+    mu_exp = mu.expand_as(ua_embeddings)
+    adj_matrix = ua_embeddings * mu_exp
+    adj_matrix = self.activation_function(adj_matrix)
+    adj_matrix = self.drop(adj_matrix)
+
+    ui_embeddings = u_embeddings*i_embeddings
+    ui_out = self.layer_norm(ui_embeddings)
+    ua_out = self.layer_norm(adj_matrix[:,1:,:])
+    ua_out = adj_matrix[:,1:,:]
+    ui_out = ui_out.expand_as(ua_out)
+    ua_out = torch.cat((ui_out, ua_out),dim = -1)
+    out_embeddings = torch.cat((torch.cat((ui_embeddings,ui_embeddings),dim=-1),ua_out),dim=-2)
+    return out_embeddings
+
+class BaseMean_w_id_4(nn.Module):
+  # output: bs*6*64
+  def __init__(self, opt):
+    super(BaseMean_w_id_4, self).__init__()
+    if opt.activation_fun == 'leaky_relu':
+        self.activation_function = nn.LeakyReLU()
+    self.drop = nn.Dropout(opt.dropout)
+    self.em_dim = opt.em_dim
+    self.layer_norm = nn.LayerNorm(self.em_dim)
+
+  def forward(self, embeddings):
+    u_embeddings = embeddings[:,0]
+    i_embeddings = embeddings[:,1]
+    a_embeddings = embeddings[:,2:]
+    u_embeddings = torch.unsqueeze(u_embeddings, dim = -2)
+    i_embeddings = torch.unsqueeze(i_embeddings, dim = -2)
+
+    ua_embeddings = torch.cat((u_embeddings,a_embeddings),dim = -2)
+    mu = ua_embeddings.mean(dim=1,keepdim=True)
+    mu_exp = mu.expand_as(ua_embeddings)
+    adj_matrix = ua_embeddings * mu_exp
+    adj_matrix = self.activation_function(adj_matrix)
+    adj_matrix = self.drop(adj_matrix)
+
+    ui_embeddings = u_embeddings*i_embeddings
+    ui_out = self.layer_norm(ui_embeddings)
+    ua_out = self.layer_norm(adj_matrix[:,1:,:])
+    ua_out = adj_matrix[:,1:,:]
+    ua_out = ui_out + ua_out
+    out_embeddings = torch.cat((ui_out, ua_out),dim = -2)
+    return out_embeddings
+
+
+class BaseMean_w_id_3(nn.Module):
+  def __init__(self, opt):
+    super(BaseMean_w_id_3, self).__init__()
+    if opt.activation_fun == 'leaky_relu':
+        self.activation_function = nn.LeakyReLU()
+    self.drop = nn.Dropout(opt.dropout)
+    self.em_dim = opt.em_dim
+    self.layer_norm = nn.LayerNorm(self.em_dim)
+
+  def forward(self, embeddings):
+    u_embeddings = embeddings[:,0]
+    i_embeddings = embeddings[:,1]
+    a_embeddings = embeddings[:,2:]
+    u_embeddings_0 = torch.unsqueeze(u_embeddings, dim = -2)
+    u_embeddings = u_embeddings_0.expand_as(a_embeddings)
+    i_embeddings = torch.unsqueeze(i_embeddings, dim = -2)
+
+    ua_embeddings = u_embeddings*a_embeddings
+    mu = ua_embeddings.mean(dim=1,keepdim=True)
+    mu_exp = mu.expand_as(ua_embeddings)
+    adj_matrix = ua_embeddings * mu_exp
+    adj_matrix = self.activation_function(adj_matrix)
+    adj_matrix = self.drop(adj_matrix)
+
+    ui_embeddings = u_embeddings_0*i_embeddings
+    ui_out = self.layer_norm(ui_embeddings)
+    ua_out = adj_matrix
+    ua_out = self.layer_norm(ua_out)
+    out_embeddings = torch.cat((ui_out, ua_out),dim = -2)
+    return out_embeddings
+
+
 class BaseMean_w_id_2(nn.Module):
   def __init__(self, opt):
     super(BaseMean_w_id_2, self).__init__()
@@ -12,52 +129,170 @@ class BaseMean_w_id_2(nn.Module):
         self.activation_function = nn.LeakyReLU()
     self.drop = nn.Dropout(opt.dropout)
     self.em_dim = opt.em_dim
-    self.layer_norm = nn.LayerNorm(self.em_dim)
 
   def forward(self, embeddings):
     u_embeddings = embeddings[:,0]
     i_embeddings = embeddings[:,1]
     a_embeddings = embeddings[:,2:]
-    u_embeddings = torch.unsqueeze(u_embeddings, dim = -2) #bs*1*64
-    i_embeddings = torch.unsqueeze(i_embeddings, dim = -2) #bs*att_num*64
+    u_embeddings_0 = torch.unsqueeze(u_embeddings, dim = -2)
+    u_embeddings = u_embeddings_0.expand_as(a_embeddings)
+    i_embeddings = torch.unsqueeze(i_embeddings, dim = -2)
+
+    ua_embeddings = u_embeddings*a_embeddings
+    mu = ua_embeddings.mean(dim=1,keepdim=True)
+    mu_exp = mu.expand_as(ua_embeddings)
+    adj_matrix = ua_embeddings * mu_exp
+    adj_matrix = self.activation_function(adj_matrix)
+    adj_matrix = self.drop(adj_matrix)
+
+    ui_embeddings = u_embeddings_0*i_embeddings
+    ui_out = ui_embeddings
+    ua_out = adj_matrix
+    out_embeddings = torch.cat((ui_out, ua_out),dim = -2)
+    return out_embeddings
+
+# type 1------------------------------------------------------------------
+# ------------------------------------------------------------------------
+class BaseMean_w_id_1_6(nn.Module):
+  def __init__(self, opt):
+    super(BaseMean_w_id_1_6, self).__init__()
+    if opt.activation_fun == 'leaky_relu':
+        self.activation_function = nn.LeakyReLU()
+    self.drop = nn.Dropout(opt.dropout)
+    self.layer_norm = nn.LayerNorm(opt.em_dim)
+    self.trans = nn.Linear(opt.em_dim, opt.em_dim)
+    self.trans_ui = nn.Linear(opt.em_dim, opt.em_dim)
+    self.em_dim = opt.em_dim
+
+  def forward(self, embeddings):
+    u_embeddings = embeddings[:,0]
+    i_embeddings = embeddings[:,1]
+    a_embeddings = embeddings[:,2:]
+    u_embeddings = torch.unsqueeze(u_embeddings, dim = -2)
+    i_embeddings = torch.unsqueeze(i_embeddings, dim = -2)
+
     ua_embeddings = torch.cat((u_embeddings,a_embeddings),dim = -2)
-
-    # first layer mp---------------------------------------------------------------
-    mu = ua_embeddings.mean(dim=1,keepdim=True) #bs*64
-    mu_exp = mu.expand_as(ua_embeddings) #bs*(att_num+1)*64
-    adj_matrix = ua_embeddings * mu_exp #bs*(att_num+1)*64
-    adj_matrix = self.activation_function(adj_matrix) #bs*(att_num+1)*64
-    adj_matrix = self.drop(adj_matrix) #bs*(att_num+1)*64
-    adj_matrix = self.layer_norm(adj_matrix)
-
-    # second layer mp---------------------------------------------------------------
-    adj_mu = adj_matrix.mean(dim=1,keepdim=True) #bs*64
-    adj_mu_exp = adj_mu.expand_as(ua_embeddings)
-    adj_matrix_2 = adj_matrix*adj_mu_exp
-    adj_matrix_2 = self.activation_function(adj_matrix_2)
-    adj_matrix_2 = self.drop(adj_matrix_2)
-    adj_matrix_2 = self.layer_norm(adj_matrix_2)
+    mu = ua_embeddings.mean(dim = -2, keepdim=True)
+    mu_exp = mu.expand_as(ua_embeddings)
+    adj_matrix = ua_embeddings * mu_exp
+    adj_matrix = self.activation_function(adj_matrix)
+    adj_matrix = self.drop(adj_matrix)
 
     ui_embeddings = u_embeddings*i_embeddings
-    ui_embeddings = self.layer_norm(ui_embeddings)
-    #ui_out = self.layer_norm(ui_embeddings)
-    #ua_out = self.layer_norm(adj_matrix[:,1:,:])
     ui_out = ui_embeddings
-    ua_out = adj_matrix_2[:,1:,:]
+    ui_out = self.trans_ui(ui_out)
+    ua_out = adj_matrix[:,1:,:]
+    ua_out = self.trans(ua_out)
+    ua_out = ua_out + a_embeddings
+    out_embeddings = torch.cat((ui_out, ua_out),dim = -2)
+    return out_embeddings
+
+class BaseMean_w_id_1_5(nn.Module):
+  def __init__(self, opt):
+    super(BaseMean_w_id_1_5, self).__init__()
+    if opt.activation_fun == 'leaky_relu':
+        self.activation_function = nn.LeakyReLU()
+    self.drop = nn.Dropout(opt.dropout)
+    self.layer_norm = nn.LayerNorm(opt.em_dim)
+    self.trans = nn.Linear(opt.em_dim, opt.em_dim)
+    self.trans_ui = nn.Linear(opt.em_dim, 2*opt.em_dim)
+    self.em_dim = opt.em_dim
+
+  def forward(self, embeddings):
+    u_embeddings = embeddings[:,0]
+    i_embeddings = embeddings[:,1]
+    a_embeddings = embeddings[:,2:]
+    u_embeddings = torch.unsqueeze(u_embeddings, dim = -2)
+    i_embeddings = torch.unsqueeze(i_embeddings, dim = -2)
+
+    ua_embeddings = torch.cat((u_embeddings,a_embeddings),dim = -2)
+    mu = ua_embeddings.mean(dim = -2, keepdim=True)
+    mu_exp = mu.expand_as(ua_embeddings)
+    adj_matrix = ua_embeddings * mu_exp
+    adj_matrix = self.activation_function(adj_matrix)
+    adj_matrix = self.drop(adj_matrix)
+
+    ui_embeddings = u_embeddings*i_embeddings
+    ui_out = self.trans_ui(ui_embeddings)
+    ua_out = adj_matrix[:,1:,:]
+    ua_out = self.trans(ua_out)
+    ua_out = torch.cat((ua_out,a_embeddings),dim = -1)
+    out_embeddings = torch.cat((ui_out, ua_out),dim = -2)
+    return out_embeddings
+
+class BaseMean_w_id_1_4(nn.Module):
+  def __init__(self, opt):
+    super(BaseMean_w_id_1_4, self).__init__()
+    if opt.activation_fun == 'leaky_relu':
+        self.activation_function = nn.LeakyReLU()
+    self.drop = nn.Dropout(opt.dropout)
+    self.layer_norm = nn.LayerNorm(opt.em_dim)
+    self.trans = nn.Linear(opt.em_dim, opt.em_dim)
+    self.em_dim = opt.em_dim
+
+  def forward(self, embeddings):
+    u_embeddings = embeddings[:,0]
+    i_embeddings = embeddings[:,1]
+    a_embeddings = embeddings[:,2:]
+    u_embeddings = torch.unsqueeze(u_embeddings, dim = -2)
+    i_embeddings = torch.unsqueeze(i_embeddings, dim = -2)
+
+    ua_embeddings = torch.cat((u_embeddings,a_embeddings),dim = -2)
+    mu = ua_embeddings.mean(dim = -2, keepdim=True)
+    mu_exp = mu.expand_as(ua_embeddings)
+    adj_matrix = ua_embeddings * mu_exp
+    adj_matrix = self.activation_function(adj_matrix)
+    adj_matrix = self.drop(adj_matrix)
+
+    ui_embeddings = u_embeddings*i_embeddings
+    ui_out = torch.cat((ui_embeddings,ui_embeddings),dim = -1)
+    ua_out = adj_matrix[:,1:,:]
+    ua_out = self.trans(ua_out)
+    ua_out = torch.cat((ua_out,a_embeddings),dim = -1)
+    out_embeddings = torch.cat((ui_out, ua_out),dim = -2)
+    return out_embeddings
+
+class BaseMean_w_id_1_3(nn.Module):
+  def __init__(self, opt):
+    super(BaseMean_w_id_1_3, self).__init__()
+    if opt.activation_fun == 'leaky_relu':
+        self.activation_function = nn.LeakyReLU()
+    self.drop = nn.Dropout(opt.dropout)
+    self.layer_norm = nn.LayerNorm(opt.em_dim)
+    self.trans = nn.Linear(opt.em_dim, opt.em_dim)
+    self.em_dim = opt.em_dim
+
+  def forward(self, embeddings):
+    u_embeddings = embeddings[:,0]
+    i_embeddings = embeddings[:,1]
+    a_embeddings = embeddings[:,2:]
+    u_embeddings = torch.unsqueeze(u_embeddings, dim = -2)
+    i_embeddings = torch.unsqueeze(i_embeddings, dim = -2)
+
+    ua_embeddings = torch.cat((u_embeddings,a_embeddings),dim = -2)
+    mu = ua_embeddings.mean(dim = -2, keepdim=True)
+    mu_exp = mu.expand_as(ua_embeddings)
+    adj_matrix = ua_embeddings * mu_exp
+    adj_matrix = self.activation_function(adj_matrix)
+    adj_matrix = self.drop(adj_matrix)
+
+    ui_embeddings = u_embeddings*i_embeddings
+    ui_out = ui_embeddings
+    ua_out = adj_matrix[:,1:,:]
+    ua_out = self.trans(ua_out)
+    ua_out = ua_out + a_embeddings
     out_embeddings = torch.cat((ui_out, ua_out),dim = -2)
     return out_embeddings
 
 
-
-class BaseMean_w_id_concat(nn.Module):
+class BaseMean_w_id_1_2(nn.Module):
   def __init__(self, opt):
-    super(BaseMean_w_id_concat, self).__init__()
+    super(BaseMean_w_id_1_2, self).__init__()
     if opt.activation_fun == 'leaky_relu':
         self.activation_function = nn.LeakyReLU()
     self.drop = nn.Dropout(opt.dropout)
+    self.layer_norm = nn.LayerNorm(opt.em_dim)
     self.em_dim = opt.em_dim
-    self.project = nn.Linear(2*self.em_dim,self.em_dim)
-    self.layer_norm = nn.LayerNorm(self.em_dim)
 
   def forward(self, embeddings):
     u_embeddings = embeddings[:,0]
@@ -65,33 +300,30 @@ class BaseMean_w_id_concat(nn.Module):
     a_embeddings = embeddings[:,2:]
     u_embeddings = torch.unsqueeze(u_embeddings, dim = -2)
     i_embeddings = torch.unsqueeze(i_embeddings, dim = -2)
+
     ua_embeddings = torch.cat((u_embeddings,a_embeddings),dim = -2)
-    mu = ua_embeddings.mean(dim=1,keepdim=True)
-    # mu = mu.unsqueeze(dim=1)
+    mu = ua_embeddings.mean(dim = -2, keepdim=True)
     mu_exp = mu.expand_as(ua_embeddings)
     adj_matrix = ua_embeddings * mu_exp
     adj_matrix = self.activation_function(adj_matrix)
     adj_matrix = self.drop(adj_matrix)
 
     ui_embeddings = u_embeddings*i_embeddings
-    ui_out = self.layer_norm(ui_embeddings)
-    ua_out = self.layer_norm(adj_matrix[:,1:,:])
+    ui_out = ui_embeddings
     ua_out = adj_matrix[:,1:,:]
-    ui_out_0 = ui_out
-    ui_out = ui_out.expand_as(ua_out)
-    ua_out = torch.cat((ui_out, ua_out),dim = -1)
-    ua_out = self.project(ua_out)
-    out_embeddings = torch.cat((ui_out_0,ua_out),dim = -2)
+    ui_out = self.layer_norm(ui_out)
+    ua_out = self.layer_norm(ua_out)
+    out_embeddings = torch.cat((ui_out, ua_out),dim = -2)
     return out_embeddings
 
-class BaseMean_w_id_sum(nn.Module):
+
+class BaseMean_w_id_1(nn.Module):
   def __init__(self, opt):
-    super(BaseMean_w_id_sum, self).__init__()
+    super(BaseMean_w_id_1, self).__init__()
     if opt.activation_fun == 'leaky_relu':
         self.activation_function = nn.LeakyReLU()
     self.drop = nn.Dropout(opt.dropout)
     self.em_dim = opt.em_dim
-    self.layer_norm = nn.LayerNorm(self.em_dim)
 
   def forward(self, embeddings):
     u_embeddings = embeddings[:,0]
@@ -99,47 +331,15 @@ class BaseMean_w_id_sum(nn.Module):
     a_embeddings = embeddings[:,2:]
     u_embeddings = torch.unsqueeze(u_embeddings, dim = -2)
     i_embeddings = torch.unsqueeze(i_embeddings, dim = -2)
+
     ua_embeddings = torch.cat((u_embeddings,a_embeddings),dim = -2)
-    mu = ua_embeddings.mean(dim=1,keepdim=True)
-    # mu = mu.unsqueeze(dim=1)
+    mu = ua_embeddings.mean(dim = -2, keepdim=True)
     mu_exp = mu.expand_as(ua_embeddings)
     adj_matrix = ua_embeddings * mu_exp
     adj_matrix = self.activation_function(adj_matrix)
     adj_matrix = self.drop(adj_matrix)
 
     ui_embeddings = u_embeddings*i_embeddings
-    ui_out = self.layer_norm(ui_embeddings)
-    ua_out = self.layer_norm(adj_matrix[:,1:,:])
-    ua_out = adj_matrix[:,1:,:]
-    out_embeddings = ui_out + ua_out
-    return out_embeddings
-
-class BaseMean_w_id(nn.Module):
-  def __init__(self, opt):
-    super(BaseMean_w_id, self).__init__()
-    if opt.activation_fun == 'leaky_relu':
-        self.activation_function = nn.LeakyReLU()
-    self.drop = nn.Dropout(opt.dropout)
-    self.em_dim = opt.em_dim
-    #self.layer_norm = nn.LayerNorm(self.em_dim)
-
-  def forward(self, embeddings):
-    u_embeddings = embeddings[:,0]
-    i_embeddings = embeddings[:,1]
-    a_embeddings = embeddings[:,2:]
-    u_embeddings = torch.unsqueeze(u_embeddings, dim = -2)
-    i_embeddings = torch.unsqueeze(i_embeddings, dim = -2)
-    ua_embeddings = torch.cat((u_embeddings,a_embeddings),dim = -2)
-    mu = ua_embeddings.mean(dim=1,keepdim=True)
-    # mu = mu.unsqueeze(dim=1)
-    mu_exp = mu.expand_as(ua_embeddings)
-    adj_matrix = ua_embeddings * mu_exp
-    adj_matrix = self.activation_function(adj_matrix)
-    adj_matrix = self.drop(adj_matrix)
-
-    ui_embeddings = u_embeddings*i_embeddings
-    #ui_out = self.layer_norm(ui_embeddings)
-    #ua_out = self.layer_norm(adj_matrix[:,1:,:])
     ui_out = ui_embeddings
     ua_out = adj_matrix[:,1:,:]
     out_embeddings = torch.cat((ui_out, ua_out),dim = -2)

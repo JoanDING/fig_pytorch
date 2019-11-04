@@ -3,35 +3,41 @@ import torch.nn as nn
 import torchvision.models as model
 from torch.nn import functional as F
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
-
-import message_passing as mp
+import attentive_message_passing as mp
 import pdb
 
 class Model(nn.Module):
+
   def __init__(self, opt):
     super(Model, self).__init__()
     em_dim = opt.em_dim
     att_dim = opt.att_dim
+    att_type = opt.type
     vocab_size = opt.vocab_size
     self.DEVICE = opt.DEVICE
     self.lr = opt.lr
-    self.lr_em = opt.lr_em
+    self.lr_att = opt.lr_att
     self.em_layer = nn.Embedding(vocab_size, em_dim)
-    self.mp_layer = mp.BaseMean(opt)
-    self.scorer = mp.Scorers(opt)
+    if att_type == 101:
+        self.att_layer = mp.att0_1_2layer(opt)
+    self.scorer = mp.Scorers_w_id(opt)
     self.params_em = self.em_layer.parameters()
     self.params_sco = self.scorer.parameters()
-    self.params_mp = self.mp_layer.parameters()
-    self.params = list(self.params_mp) + list(self.params_sco)
-    self.optimizer = torch.optim.Adam(self.params, lr=self.lr, weight_decay=opt.weight_decay2)
-    self.optimizer_em = torch.optim.Adam(self.params_em, lr=self.lr_em, weight_decay=opt.weight_decay)
+    #self.params_mp = self.mp_layer.parameters()
+    self.params_att = self.att_layer.parameters()
+    self.params = list(self.params_sco) + list(self.params_em)
+    self.optimizer = torch.optim.Adam(self.params, lr=self.lr, weight_decay=opt.weight_decay)
+    self.optimizer_att = torch.optim.Adam(self.params_att, lr=self.lr_att, weight_decay=opt.weight_decay_att)
 
   def get_output(self, inds, mask):
     inds = inds.to(self.DEVICE)
     mask = mask.to(self.DEVICE)
-    em = self.em_layer(inds)
-    em_update = self.mp_layer(em)
-    scores = self.scorer(em_update[:,1:,:], mask[:,1:])
+    em = self.em_layer(inds) # input: uid,iid,att,bs*8 || output: uid_emb,iid_emb,att_emb bs*8*64
+    iid_embed = torch.unsqueeze(em[:,1,:], dim=-2)
+    #em_update = self.mp_layer(em) # input: uid,iid,att,bs*8*64 || output: att_emb_updated bs*6*64
+    #em_update = torch.cat((iid_embed,em_update),dim=-2) # bs*7*64
+    em_update = self.att_layer(em) # input: bs*7*64 || output: bs*7*64
+    scores = self.scorer(em_update, mask[:,1:]) # input: bs*7*64 || output:bs*1
     return scores
 
   def get_loss(self, pos, neg, mask_pos, mask_neg):
@@ -51,8 +57,8 @@ class Model(nn.Module):
     mask_neg = mask_neg.to(self.DEVICE)
     loss = self.get_loss(pos, neg, mask_pos, mask_neg)
     self.optimizer.zero_grad()
-    self.optimizer_em.zero_grad()
+    self.optimizer_att.zero_grad()
     loss.backward()
     self.optimizer.step()
-    self.optimizer_em.step()
+    self.optimizer_att.step()
 

@@ -3,25 +3,49 @@ import torch.nn as nn
 import torchvision.models as model
 from torch.nn import functional as F
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
-import message_passing as mp
+import mp_base as mp
 import pdb
 
 class Model(nn.Module):
   def __init__(self, opt):
     super(Model, self).__init__()
-    em_dim = opt.em_dim
-    att_dim = opt.att_dim
     vocab_size = opt.vocab_size
     self.DEVICE = opt.DEVICE
     self.lr = opt.lr
-    self.em_layer = nn.Embedding(vocab_size, em_dim)
-    self.mp_layer = mp.BaseMean_w_id(opt)
+    self.em_layer = nn.Embedding(vocab_size, opt.em_dim)
+    if opt.type == 1:
+        self.mp_layer = mp.BaseMean_w_id_1(opt)
+    elif opt.type == 12:
+        self.mp_layer = mp.BaseMean_w_id_1_2(opt)
+    elif opt.type == 13:
+        self.mp_layer = mp.BaseMean_w_id_1_3(opt)
+    elif opt.type == 14:
+        self.mp_layer = mp.BaseMean_w_id_1_4(opt)
+        opt.em_dim = 2 * opt.em_dim
+    elif opt.type == 15:
+        self.mp_layer = mp.BaseMean_w_id_1_5(opt)
+        opt.em_dim = 2 * opt.em_dim
+    elif opt.type == 16:
+        self.mp_layer = mp.BaseMean_w_id_1_6(opt)
+    elif opt.type == 2:
+        self.mp_layer = mp.BaseMean_w_id_2(opt)
+    elif opt.type == 3:
+        self.mp_layer = mp.BaseMean_w_id_3(opt)
+    elif opt.type == 4:
+        self.mp_layer = mp.BaseMean_w_id_4(opt)
+    elif opt.type == 5:
+        self.mp_layer = mp.BaseMean_w_id_5(opt)
+        opt.em_dim = 2 * opt.em_dim
+    elif opt.type == 6:
+        self.mp_layer = mp.BaseMean_w_id_6(opt)
     self.scorer = mp.Scorers_w_id(opt)
+
     self.params_em = self.em_layer.parameters()
     self.params_sco = self.scorer.parameters()
     self.params_mp = self.mp_layer.parameters()
     self.params = list(self.params_em) + list(self.params_mp) + list(self.params_sco)
     self.optimizer = torch.optim.Adam(self.params, lr=self.lr, weight_decay=opt.weight_decay)
+    #self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer,step_size = 100, gamma = 0.5, last_epoch = -1)
 
   def get_output(self, inds, mask):
     inds = inds.to(self.DEVICE)
@@ -52,6 +76,6 @@ class Model(nn.Module):
     self.optimizer.zero_grad()
     #self.optimizer_em.zero_grad()
     loss.backward()
+    #self.scheduler.step(epoch)
     self.optimizer.step()
-    #self.optimizer_em.step()
 

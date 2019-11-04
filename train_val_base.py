@@ -158,7 +158,9 @@ def main():
   parser.add_argument('--dropout', default=0.2, type=float,
                       help='Atention softmax temperature.')
   parser.add_argument('--weight_decay', default=1e-6, type=float,
-                      help='learning rate')
+                      help='weight_decay')
+  parser.add_argument('--weight_decay2', default=1e-6, type=float,
+                      help='weight_decay2')
   parser.add_argument('--checkpoint', default='', type=str,
                       help='checkpoint')
 

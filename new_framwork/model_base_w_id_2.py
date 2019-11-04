@@ -3,7 +3,7 @@ import torch.nn as nn
 import torchvision.models as model
 from torch.nn import functional as F
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
-import message_passing as mp
+import mp_base_2 as mp
 import pdb
 
 class Model(nn.Module):
@@ -15,7 +15,8 @@ class Model(nn.Module):
     self.DEVICE = opt.DEVICE
     self.lr = opt.lr
     self.em_layer = nn.Embedding(vocab_size, em_dim)
-    self.mp_layer = mp.BaseMean_w_id_2(opt)
+    if opt.type == 6:
+        self.mp_layer = mp.base_mp_6(opt)
     self.scorer = mp.Scorers_w_id(opt)
     self.params_em = self.em_layer.parameters()
     self.params_sco = self.scorer.parameters()
