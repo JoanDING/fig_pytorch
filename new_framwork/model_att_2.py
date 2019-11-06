@@ -23,16 +23,28 @@ class Model(nn.Module):
 
     if att_type == 101:
         self.att_layer = mp.att0_1_2layer(opt)
-    if att_type == 1016:
+    elif att_type == 1016:
         self.att_layer = mp.att0_16_2layer(opt)
+        self.params_att = self.att_layer.att_layer.att_a.parameters()
         self.params_mp = list(self.att_layer.mp_w1.parameters()) + list(self.att_layer.mp_w2.parameters())
         self.params += self.params_mp
-    if att_type == 1017:
+    elif att_type == 1017:
         self.att_layer = mp.att0_16_2layer(opt)
+        self.params_att = self.att_layer.att_layer.att_a.parameters()
+    elif att_type == 1018:
+        self.att_layer = mp.att0_18_2layer(opt)
+        self.params_att = self.att_layer.att_layer.att_a.parameters()
+        self.params_mp = list(self.att_layer.mp_w1.parameters()) + list(self.att_layer.mp_w2.parameters())
+        self.params += self.params_mp
+    elif att_type == 1019:
+        self.att_layer = mp.att0_19_2layer(opt)
+        self.params_att = list(self.att_layer.att_layer1.att_a.parameters()) + list(self.att_layer.att_layer2.att_a.parameters())
+        self.params_mp = list(self.att_layer.mp_w1.parameters()) + list(self.att_layer.mp_w2.parameters())
+        self.params += self.params_mp
+
 
     self.scorer = mp.Scorers_w_id(opt)
     self.params_sco = self.scorer.parameters()
-    self.params_att = self.att_layer.att_layer.att_a.parameters()
     self.params += list(self.params_sco)
     self.optimizer = torch.optim.Adam(self.params, lr=self.lr, weight_decay=opt.weight_decay)
     self.optimizer_att = torch.optim.Adam(self.params_att, lr=self.lr_att, weight_decay=opt.weight_decay_att)
