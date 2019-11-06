@@ -23,11 +23,11 @@ from best_model_att import *
 def train(opt):
   print('loading training data...')
   if opt.dataset == 'women':
-    data_path = '/storage/yjding/djj_mask/amazon-women-group-cp_mask'
+    data_path = opt.women_path
     data_train = WomenTrain(data_path)
     data_test = WomenTest(data_path)
   elif opt.dataset == 'men':
-    data_path = '/storage/yjding/djj_mask/amazon-men-group-cp_mask'
+    data_path = opt.men_path
     data_train = MenTrain(data_path)
     data_test = MenTest(data_path)
 
@@ -139,6 +139,10 @@ def main():
   parser = argparse.ArgumentParser()
   parser.add_argument('--em_dim', default=64, type=int,
                       help='embeddings dim.')
+  parser.add_argument('--women_path', default='/storage/yjding/djj_mask/amazon-women-group-cp_mask', type=str,
+                      help = 'path of women data,')
+  parser.add_argument('--men_path', default='/storage/yjding/djj_mask/amazon-men-group-cp_mask', type=str,
+                      help = 'path of men data,')
   parser.add_argument('--num_layer', default=1, type=int,
                       help='num_layer')
   parser.add_argument('--att_dim', default=64, type=int,
