@@ -17,7 +17,7 @@ from eval_metrics.eval import *
 
 from amazon_men import *
 from amazon_women import *
-from model_att import *
+from best_model_att import *
 
 
 def train(opt):
@@ -86,6 +86,8 @@ def train(opt):
       loss_epoch += model.loss.data
     t1 = time.time()
     print('Epoch: {}, total iter: {}, loss: {}, time: {}'.format(ep_id,iter_cnt,loss_epoch/(iter_id+1.), t1-t0))
+    param_mp = model.param_mp
+    print(param_mp)
     if ep_id%eval_freq==0:
       print('Eval...Epoch {}'.format(ep_id))
       rank_res = {}
@@ -126,7 +128,7 @@ def train(opt):
         bestndcg = np.mean(ndcg)
         bestmrr = np.mean(mrr)
       t2 = time.time()
-      print(attention_alpha[0,:,:,0])
+      #print(attention_alpha[0,:,:,0])
       print('best epoch %d: Precision %.4f, Recall %.4f, mAP %.4f, NDCG %.4f, MRR %.4f'%(best_epoch, bestpre, bestrec, bestap, bestndcg, bestmrr))
       print('evaluate time: {}').format(t2-t1)
       #print('rank_list top{}: {}'.format(opt.topk, rank_list[:opt.topk]))
@@ -171,7 +173,7 @@ def main():
                       help='Atention softmax temperature.')
   parser.add_argument('--weight_decay', default=1e-6, type=float,
                       help='weight_decay')
-  parser.add_argument('--weight_decay_att', default=2e-6, type=float,
+  parser.add_argument('--weight_decay_att', default=1e-3, type=float,
                       help='weight_decay_att')
   parser.add_argument('--checkpoint', default='', type=str,
                       help='checkpoint')

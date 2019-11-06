@@ -13,7 +13,21 @@ class Model(nn.Module):
     self.DEVICE = opt.DEVICE
     self.lr = opt.lr
     self.em_layer = nn.Embedding(vocab_size, opt.em_dim)
-    if opt.type == 1:
+    if opt.type == 10:
+        self.mp_layer = mp.BaseMean_no_mp(opt)
+        self.scorer = mp.Scorers_w_id(opt)
+        self.params_em = self.em_layer.parameters()
+        self.params_sco = self.scorer.parameters()
+        self.params = list(self.params_em) + list(self.params_sco)
+    elif opt.type == 101:
+        self.mp_layer = mp.BaseMean_add_mp(opt)
+        self.scorer = mp.Scorers_w_id(opt)
+        self.params_em = self.em_layer.parameters()
+        self.params_sco = self.scorer.parameters()
+        self.params_mp = self.mp_layer.parameters()
+        self.params = list(self.params_em) + list(self.params_mp) + list(self.params_sco)
+        #self.params = list(self.params_em)  + list(self.params_sco)
+    elif opt.type == 1:
         self.mp_layer = mp.BaseMean_w_id_1(opt)
     elif opt.type == 12:
         self.mp_layer = mp.BaseMean_w_id_1_2(opt)
@@ -38,12 +52,11 @@ class Model(nn.Module):
         opt.em_dim = 2 * opt.em_dim
     elif opt.type == 6:
         self.mp_layer = mp.BaseMean_w_id_6(opt)
-    self.scorer = mp.Scorers_w_id(opt)
+        self.scorer = mp.Scorers_w_id(opt)
+        self.params_em = self.em_layer.parameters()
+        self.params_sco = self.scorer.parameters()
+        self.params = list(self.params_em) + list(self.params_sco)
 
-    self.params_em = self.em_layer.parameters()
-    self.params_sco = self.scorer.parameters()
-    self.params_mp = self.mp_layer.parameters()
-    self.params = list(self.params_em) + list(self.params_mp) + list(self.params_sco)
     self.optimizer = torch.optim.Adam(self.params, lr=self.lr, weight_decay=opt.weight_decay)
     #self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer,step_size = 100, gamma = 0.5, last_epoch = -1)
 

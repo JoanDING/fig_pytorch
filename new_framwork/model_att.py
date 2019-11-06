@@ -25,76 +25,23 @@ class Model(nn.Module):
     self.lr = opt.lr
     self.lr_att = opt.lr_att
     self.em_layer = nn.Embedding(vocab_size, em_dim)
+    self.params_em = self.em_layer.parameters()
+    self.params = list(self.params_em)
     if att_type == 10:
         self.att_layer = mp.att0(opt)
     elif att_type == 101:
         self.att_layer = mp.att0_1(opt)
-    elif att_type == 1010:
-        self.att_layer = mp.att0_1_multiply(opt)
-    elif att_type == 1011:
-        self.att_layer = mp.att0_11(opt)
-    elif att_type == 1012:
-        self.att_layer = mp.att0_12(opt)
-    elif att_type == 1013:
-        self.att_layer = mp.att0_13(opt)
-    elif att_type == 1014:
-        self.att_layer = mp.att0_14(opt)
-    elif att_type == 1015:
-        self.att_layer = mp.att0_15(opt)
-    elif att_type == 102:
-        self.att_layer = mp.att0_2(opt)
-    elif att_type == 103:
-        self.att_layer = mp.att0_3(opt)
-    elif att_type == 104:
-        self.att_layer = mp.att0_4(opt)
-    elif att_type == 105:
-        self.att_layer = mp.att0_5(opt)
-    elif att_type == 106:
-        self.att_layer = mp.att0_6(opt)
-    elif att_type == 107:
-        self.att_layer = mp.att0_7(opt)
-    elif att_type == 1:
-        self.att_layer = mp.att1(opt)
-    elif att_type == 11:
-        self.att_layer = mp.att1_1(opt)
-    elif att_type == 2:
-        self.att_layer = mp.att2(opt)
-    elif att_type == 3:
-        self.att_layer = mp.att3(opt)
-    elif att_type == 31:
-        self.att_layer = mp.att3_1(opt)
-    elif att_type == 32:
-        self.att_layer = mp.att3_2(opt)
-    elif att_type == 33:
-        self.att_layer = mp.att3_3(opt)
-    elif att_type == 34:
-        self.att_layer = mp.att3_4(opt)
-    elif att_type == 35:
-        self.att_layer = mp.att3_5(opt)
-    elif att_type == 4:
-        self.att_layer = mp.att4(opt)
-    elif att_type == 41:
-        self.att_layer = mp.att4_1(opt)
-    elif att_type == 42:
-        self.att_layer = mp.att4_2(opt)
-    elif att_type == 43:
-        self.att_layer = mp.att4_3(opt)
-    elif att_type == 5:
-        self.att_layer = mp.att5(opt)
-    elif att_type == 6:
-        self.att_layer = mp.att6(opt)
-    elif att_type == 7:
-        self.att_layer = mp.att7(opt)
-    elif att_type == 8:
-        self.att_layer = mp.att8(opt)
-    elif att_type == 9:
-        self.att_layer = mp.att9(opt)
+    elif att_type == 1016:
+        self.att_layer = mp.att0_16(opt)
+        self.params_mp = self.att_layer.mp_w.parameters()
+        self.params += list(self.params_mp)
+    elif att_type == 1017:
+        self.att_layer = mp.att0_16(opt)
+
     self.scorer = mp.Scorers_w_id(opt)
-    self.params_em = self.em_layer.parameters()
     self.params_sco = self.scorer.parameters()
-    #self.params_mp = self.mp_layer.parameters()
-    self.params_att = self.att_layer.parameters()
-    self.params = list(self.params_sco) + list(self.params_em)
+    self.params_att = self.att_layer.att_layer.att_a.parameters()
+    self.params += list(self.params_sco)
     self.optimizer = torch.optim.Adam(self.params, lr=self.lr, weight_decay=opt.weight_decay)
     self.optimizer_att = torch.optim.Adam(self.params_att, lr=self.lr_att, weight_decay=opt.weight_decay_att)
 

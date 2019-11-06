@@ -17,7 +17,7 @@ from eval_metrics.eval import *
 
 from amazon_men import *
 from amazon_women import *
-from model_base import *
+from model_base_w_id import *
 
 
 def train(opt):
@@ -71,9 +71,14 @@ def train(opt):
   bestap = 0
   bestmrr = 0
   bestrec = 0
+  lr_update = model.lr
   for ep_id in range(opt.max_eps):
     t0 = time.time()
     loss_epoch = 0
+    if ep_id % 200 == 0 and ep_id !=0:
+        lr_update = lr_update*0.5
+        model.optimizer = torch.optim.Adam(model.params,lr=lr_update,weight_decay = opt.weight_decay)
+        print('change learning rate from {} to {}'.format(lr_update*2,lr_update))
     for iter_id, train_batch in enumerate(data_loader_train):
       model.train()
       model.train_step(*train_batch)
@@ -81,6 +86,7 @@ def train(opt):
       loss_epoch += model.loss.data
     t1 = time.time()
     print('Epoch: {}, total iter: {}, loss: {}, time: {}'.format(ep_id,iter_cnt,loss_epoch/(iter_id+1.), t1-t0))
+    #print('pos score: {}, neg_score: {}'.format(model.pos_sc[0], model.neg_sc[0]))
     if ep_id%eval_freq==0:
       print('Eval...Epoch {}'.format(ep_id))
       rank_res = {}
@@ -129,13 +135,13 @@ def main():
                       help='embeddings dim.')
   parser.add_argument('--num_layer', default=1, type=int,
                       help='num_layer')
+  parser.add_argument('--type', default=1, type=int,
+                      help='message passing type')
   parser.add_argument('--att_dim', default=64, type=int,
                       help='Attention transform dim')
   parser.add_argument('--activation_fun', default='leaky_relu', type=str,
                       help='Activation function')
   parser.add_argument('--num_node', default=7, type=int,
-                      help='Attention softmax temperature.')
-  parser.add_argument('--margin', default=0.2, type=float,
                       help='Attention softmax temperature.')
   parser.add_argument('--share_scorer', default=0, type=int,
                       help='flag for sharing scorers, 0 or 1')
@@ -149,9 +155,7 @@ def main():
                       help='training and val batch size')
   parser.add_argument('--dataset', default='men', type=str,
                       help='root path of data')
-  parser.add_argument('--lr', default=0.005, type=float,
-                      help='initial learning rate')
-  parser.add_argument('--lr_em', default=0.002, type=float,
+  parser.add_argument('--lr', default=0.002, type=float,
                       help='initial learning rate')
   parser.add_argument('--gpu', default=0, type=int,
                       help='Attention softmax temperature.')
@@ -159,8 +163,6 @@ def main():
                       help='Atention softmax temperature.')
   parser.add_argument('--weight_decay', default=1e-6, type=float,
                       help='weight_decay')
-  parser.add_argument('--weight_decay2', default=1e-6, type=float,
-                      help='weight_decay2')
   parser.add_argument('--checkpoint', default='', type=str,
                       help='checkpoint')
 
@@ -168,6 +170,9 @@ def main():
   train(opt)
 
 if __name__ == '__main__':
+    np.random.seed(2019)
+    torch.manual_seed(2019)
+    torch.cuda.manual_seed_all(2019)
     main()
 
 

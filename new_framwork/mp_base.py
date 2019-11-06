@@ -4,9 +4,8 @@ import torchvision.models as model
 from torch.nn import functional as F
 import pdb
 
-
 class BaseMean_w_id_6(nn.Module):
-  # output: bs*6*128
+  #output: bs*7*64
   def __init__(self, opt):
     super(BaseMean_w_id_6, self).__init__()
     if opt.activation_fun == 'leaky_relu':
@@ -18,14 +17,54 @@ class BaseMean_w_id_6(nn.Module):
     mu = embeddings.mean(dim=1,keepdim=True)
     mu_exp = mu.expand_as(embeddings)
     adj_matrix = embeddings * mu_exp
-    adj_matrix = self.activation_function(adj_matrix)
-    adj_matrix = self.drop(adj_matrix)
+    adj = adj_matrix[:,1:,:]
+    adj_matrix = self.activation_function(adj)
+    out_embeddings = self.drop(adj_matrix)
+    return out_embeddings
 
-    out_embeddings = adj_matrix[:,1:,:]
+class BaseMean_add_mp(nn.Module):
+  #output: bs*7*64
+  def __init__(self, opt):
+    super(BaseMean_add_mp, self).__init__()
+    if opt.activation_fun == 'leaky_relu':
+        self.activation_function = nn.LeakyReLU()
+    self.w = nn.Linear(opt.em_dim,opt.em_dim)
+    self.drop = nn.Dropout(opt.dropout)
+
+  def forward(self, embeddings):
+    u_em = embeddings[:,0,:]
+    i_em = embeddings[:,1:,:]
+    u_em = torch.unsqueeze(u_em,dim=-2)
+    u_em = u_em.expand_as(i_em)
+    ui = u_em * i_em
+    mu = i_em.mean(dim=1,keepdim=True)
+    mu_exp = mu.expand_as(i_em)
+    adj = i_em * mu_exp
+    adj = self.w(adj)
+    ui_adj = ui + adj
+    ui_adj = self.activation_function(ui_adj)
+    out_embeddings = self.drop(ui_adj)
+    return out_embeddings
+
+class BaseMean_no_mp(nn.Module):
+  def __init__(self, opt):
+    super(BaseMean_no_mp, self).__init__()
+    if opt.activation_fun == 'leaky_relu':
+        self.activation_function = nn.LeakyReLU()
+    self.drop = nn.Dropout(opt.dropout)
+    self.em_dim = opt.em_dim
+
+  def forward(self, embeddings):
+    u_em = embeddings[:,0,:]
+    i_em = embeddings[:,1:,:]
+    u_em = torch.unsqueeze(u_em,dim=-2)
+    u_em = u_em.expand_as(i_em)
+    adj = u_em * i_em
+    adj_matrix = self.activation_function(adj)
+    out_embeddings = self.drop(adj_matrix)
     return out_embeddings
 
 class BaseMean_w_id_5(nn.Module):
-  # output: bs*6*128
   def __init__(self, opt):
     super(BaseMean_w_id_5, self).__init__()
     if opt.activation_fun == 'leaky_relu':
@@ -58,7 +97,6 @@ class BaseMean_w_id_5(nn.Module):
     return out_embeddings
 
 class BaseMean_w_id_4(nn.Module):
-  # output: bs*6*64
   def __init__(self, opt):
     super(BaseMean_w_id_4, self).__init__()
     if opt.activation_fun == 'leaky_relu':

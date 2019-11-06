@@ -17,6 +17,12 @@ class Model(nn.Module):
     self.em_layer = nn.Embedding(vocab_size, em_dim)
     if opt.type == 6:
         self.mp_layer = mp.base_mp_6(opt)
+    elif opt.type == 101:
+        self.mp_layer = mp.BaseMean_add_mp_1(opt)
+    elif opt.type == 102:
+        self.mp_layer = mp.BaseMean_add_mp_2(opt)
+    elif opt.type == 103:
+        self.mp_layer = mp.BaseMean_add_mp_3(opt)
     self.scorer = mp.Scorers_w_id(opt)
     self.params_em = self.em_layer.parameters()
     self.params_sco = self.scorer.parameters()

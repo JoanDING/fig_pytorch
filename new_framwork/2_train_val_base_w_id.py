@@ -71,9 +71,14 @@ def train(opt):
   bestap = 0
   bestmrr = 0
   bestrec = 0
+  lr_update = model.lr
   for ep_id in range(opt.max_eps):
     t0 = time.time()
     loss_epoch = 0
+    if ep_id % 50 == 0 and ep_id != 0:
+        lr_update = lr_update*0.5
+        model.optimizer = torch.optim.Adam(model.params, lr = lr_update,weight_decay = opt.weight_decay)
+        print('change learning rate from {} to {}'.format(lr_update*2, lr_update))
     for iter_id, train_batch in enumerate(data_loader_train):
       model.train()
       model.train_step(*train_batch)
