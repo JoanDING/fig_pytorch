@@ -27,6 +27,13 @@ class Model(nn.Module):
         self.params_mp = self.mp_layer.parameters()
         self.params = list(self.params_em) + list(self.params_mp) + list(self.params_sco)
         #self.params = list(self.params_em)  + list(self.params_sco)
+    elif opt.type == 104:
+        self.mp_layer = mp.BaseMean_add_mp1(opt)
+        self.scorer = mp.Scorers_w_id(opt)
+        self.params_em = self.em_layer.parameters()
+        self.params_sco = self.scorer.parameters()
+        self.params_mp = self.mp_layer.parameters()
+        self.params = list(self.params_em) + list(self.params_mp) + list(self.params_sco)
     elif opt.type == 1:
         self.mp_layer = mp.BaseMean_w_id_1(opt)
     elif opt.type == 12:

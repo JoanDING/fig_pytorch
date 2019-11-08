@@ -3,7 +3,7 @@ import torch.nn as nn
 import torchvision.models as model
 from torch.nn import functional as F
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
-import attentive_message_passing as mp
+import attentive_mp as mp
 import pdb
 
 class Model(nn.Module):
@@ -33,6 +33,14 @@ class Model(nn.Module):
         self.att_layer = mp.att0_1(opt)
     elif att_type == 1016:
         self.att_layer = mp.att0_16(opt)
+        self.params_mp = self.att_layer.mp_w.parameters()
+        self.params += list(self.params_mp)
+    elif att_type == 104:
+        self.att_layer = mp.att0_16_104(opt)
+        self.params_mp = list(self.att_layer.mp_w1.parameters()) + list(self.att_layer.mp_w2.parameters())
+        self.params += list(self.params_mp)
+    elif att_type == 1018:
+        self.att_layer = mp.att0_18(opt)
         self.params_mp = self.att_layer.mp_w.parameters()
         self.params += list(self.params_mp)
     elif att_type == 1017:

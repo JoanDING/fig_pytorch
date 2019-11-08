@@ -3,7 +3,7 @@ import torch.nn as nn
 import torchvision.models as model
 from torch.nn import functional as F
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
-import attentive_message_passing as mp
+import attentive_mp_2 as mp
 import pdb
 
 class Model(nn.Module):
@@ -34,6 +34,46 @@ class Model(nn.Module):
     elif att_type == 1018:
         self.att_layer = mp.att0_18_2layer(opt)
         self.params_att = self.att_layer.att_layer.att_a.parameters()
+        self.params_mp = list(self.att_layer.mp_w1.parameters()) + list(self.att_layer.mp_w2.parameters())
+        self.params += self.params_mp
+    elif att_type == 1020:
+        self.att_layer = mp.att0_20_2layer(opt)
+        self.params_att = self.att_layer.att_layer.att_a.parameters()
+        self.params_mp = list(self.att_layer.mp_w1.parameters()) + list(self.att_layer.mp_w2.parameters())
+        self.params += self.params_mp
+    elif att_type == 1021:
+        self.att_layer = mp.att0_21_2layer(opt)
+        self.params_att = self.att_layer.att_layer.att_a.parameters()
+        self.params_mp = list(self.att_layer.mp_w1.parameters()) + list(self.att_layer.mp_w2.parameters())
+        self.params += self.params_mp
+    elif att_type == 1022:
+        self.att_layer = mp.att0_22_2layer(opt)
+        self.params_att = self.att_layer.att_layer.att_a.parameters()
+        self.params_mp = list(self.att_layer.mp_w1.parameters()) + list(self.att_layer.mp_w2.parameters())
+        self.params += self.params_mp
+    elif att_type == 1023:
+        self.att_layer = mp.att0_23_2layer(opt)
+        self.params_att = self.att_layer.att_layer.att_a.parameters()
+        self.params_mp = list(self.att_layer.mp_w1.parameters()) + list(self.att_layer.mp_w2.parameters())
+        self.params += self.params_mp
+    elif att_type == 1024:
+        self.att_layer = mp.att0_24_2layer(opt)
+        self.params_att = self.att_layer.att_layer.att_a.parameters()
+        self.params_mp = list(self.att_layer.mp_w1.parameters()) + list(self.att_layer.mp_w2.parameters())
+        self.params += self.params_mp
+    elif att_type == 1026:
+        self.att_layer = mp.att0_26_2layer(opt)
+        self.params_att = self.att_layer.att_layer.att_a.parameters()
+        self.params_mp = list(self.att_layer.mp_w1.parameters()) + list(self.att_layer.mp_w2.parameters())
+        self.params += self.params_mp
+    elif att_type == 1027:
+        self.att_layer = mp.att0_27_2layer(opt)
+        self.params_att = list(self.att_layer.att_layer1.att_a.parameters()) + list(self.att_layer.att_layer2.att_a.parameters())
+        self.params_mp = list(self.att_layer.mp_w1.parameters()) + list(self.att_layer.mp_w2.parameters())
+        self.params += self.params_mp
+    elif att_type == 1028:
+        self.att_layer = mp.att0_28_2layer(opt)
+        self.params_att = list(self.att_layer.att_layer1.att_a.parameters()) + list(self.att_layer.att_layer2.att_a.parameters())
         self.params_mp = list(self.att_layer.mp_w1.parameters()) + list(self.att_layer.mp_w2.parameters())
         self.params += self.params_mp
     elif att_type == 1019:

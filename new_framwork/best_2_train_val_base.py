@@ -75,7 +75,7 @@ def train(opt):
   for ep_id in range(opt.max_eps):
     t0 = time.time()
     loss_epoch = 0
-    if ep_id % 50 == 0 and ep_id != 0:
+    if ep_id % opt.lr_change == 0 and ep_id != 0:
         lr_update = lr_update*0.5
         model.optimizer = torch.optim.Adam(model.params, lr = lr_update,weight_decay = opt.weight_decay)
         print('change learning rate from {} to {}'.format(lr_update*2, lr_update))
@@ -165,6 +165,8 @@ def main():
                       help='weight_decay')
   parser.add_argument('--checkpoint', default='', type=str,
                       help='checkpoint')
+  parser.add_argument('--lr_change', default= 50, type=int,
+                      help='lr change')
   parser.add_argument('--women_path', default='/storage/yjding/djj_mask/amazon-women-group-cp_mask', type=str,
                       help = 'women dataset path')
   parser.add_argument('--men_path', default='/storage/yjding/djj_mask/amazon-men-group-cp_mask', type=str,

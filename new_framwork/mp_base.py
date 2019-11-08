@@ -22,6 +22,32 @@ class BaseMean_w_id_6(nn.Module):
     out_embeddings = self.drop(adj_matrix)
     return out_embeddings
 
+class BaseMean_add_mp1(nn.Module):
+  #output: bs*7*64
+  def __init__(self, opt):
+    super(BaseMean_add_mp1, self).__init__()
+    if opt.activation_fun == 'leaky_relu':
+        self.activation_function = nn.LeakyReLU()
+    self.w1 = nn.Linear(opt.em_dim,opt.em_dim)
+    self.w2 = nn.Linear(opt.em_dim,opt.em_dim)
+    self.drop = nn.Dropout(opt.dropout)
+
+  def forward(self, embeddings):
+    u_em = embeddings[:,0,:]
+    i_em = embeddings[:,1:,:]
+    u_em = torch.unsqueeze(u_em,dim=-2)
+    u_em = u_em.expand_as(i_em)
+    ui = u_em * i_em
+    mu = i_em.mean(dim=1,keepdim=True)
+    mu_exp = mu.expand_as(i_em)
+    adj = i_em * mu_exp
+    adj = self.w1(adj)
+    ii = self.w2(i_em + adj)
+    ui_adj = ui + ii
+    ui_adj = self.activation_function(ui_adj)
+    out_embeddings = self.drop(ui_adj)
+    return out_embeddings
+
 class BaseMean_add_mp(nn.Module):
   #output: bs*7*64
   def __init__(self, opt):

@@ -102,6 +102,45 @@ class BaseMean_add_mp_2(nn.Module):
     out_embeddings = ui_adj1
     return out_embeddings
 
+
+class BaseMean_add_mp_4(nn.Module):
+  #output: bs*7*64
+  def __init__(self, opt):
+    super(BaseMean_add_mp_4, self).__init__()
+    if opt.activation_fun == 'leaky_relu':
+        self.activation_function = nn.LeakyReLU()
+    self.w00 = nn.Linear(opt.em_dim,opt.em_dim)
+    self.w01 = nn.Linear(opt.em_dim,opt.em_dim)
+    self.w10 = nn.Linear(opt.em_dim,opt.em_dim)
+    self.w11 = nn.Linear(opt.em_dim,opt.em_dim)
+    self.drop = nn.Dropout(opt.dropout)
+
+  def forward(self, embeddings):
+    u_em = embeddings[:,0,:]
+    i_em = embeddings[:,1:,:]
+    u_em = torch.unsqueeze(u_em,dim=-2)
+    u_em = u_em.expand_as(i_em)
+    ui0 = u_em * i_em
+    # first layer ---------------
+    mu0 = i_em.mean(dim=1,keepdim=True)
+    mu0_exp = mu0.expand_as(i_em)
+    adj0 = i_em * mu0_exp
+    adj0 = self.w00(adj0)
+    ii0 = self.w01(adj0 + i_em)
+    # second layer ---------------
+    mu1 = ii0.mean(dim=1,keepdim=True)
+    mu1_exp = mu1.expand_as(ii0)
+    adj1 = ii0 * mu1_exp
+    adj1 = self.w10(adj1)
+    ii1 = self.w11(adj1 + ii0)
+
+    ui_adj = ui0 + ii1
+    ui_adj = self.activation_function(ui_adj)
+    ui_adj = self.drop(ui_adj)
+
+    out_embeddings = ui_adj
+    return out_embeddings
+
 class BaseMean_add_mp_1(nn.Module):
   #output: bs*7*64
   def __init__(self, opt):

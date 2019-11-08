@@ -23,6 +23,8 @@ class Model(nn.Module):
         self.mp_layer = mp.BaseMean_add_mp_2(opt)
     elif opt.type == 103:
         self.mp_layer = mp.BaseMean_add_mp_3(opt)
+    elif opt.type == 104:
+        self.mp_layer = mp.BaseMean_add_mp_4(opt)
     self.scorer = mp.Scorers_w_id(opt)
     self.params_em = self.em_layer.parameters()
     self.params_sco = self.scorer.parameters()

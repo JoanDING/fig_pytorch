@@ -194,6 +194,38 @@ class Att_add_mp_best(nn.Module):
         value = query * key
         return alphas,value
 
+
+class Att_add_mp_norm(nn.Module):
+    def __init__(self,activation_fun,dropout,em_dim):
+        super(Att_add_mp_norm,self).__init__()
+        self.att_a = nn.Linear(2* em_dim,1)
+        if activation_fun == 'leaky_relu':
+            self.activation_function = nn.LeakyReLU()
+        self.drop = nn.Dropout(dropout)
+        self.layer_norm = nn.LayerNorm(em_dim)
+
+    def forward(self,i_em):
+        i_em_norm = self.layer_norm(i_em)
+        query = torch.unsqueeze(i_em_norm,dim=-2)
+        key = torch.unsqueeze(i_em_norm,dim=-3)
+        query_ = torch.unsqueeze(i_em,dim=-2)
+        key_ = torch.unsqueeze(i_em,dim=-3)
+
+        query = query.expand(query.size()[0],query.size()[1],query.size()[1],query.size()[-1])
+        key = key.expand(key.size()[0],key.size()[2],key.size()[2],key.size()[-1])
+        self.wq = query
+        self.wk = key
+        qk = torch.cat((self.wq,self.wk),dim=-1) # 256,6,6,128
+        qk = self.att_a(qk) #256,6,6,1
+        qk = self.activation_function(qk)
+        qk = self.drop(qk)
+        #qk = self.att_a(qk) #256,6,6,1
+        qk = torch.squeeze(qk, dim=-1) #256,6,6
+        alphas = F.softmax(qk, dim=-1) #256,6,6
+        alphas = torch.unsqueeze(alphas,dim=-1)
+        value = query_ * key_
+        return alphas,value
+
 class Att_add_mp(nn.Module):
     def __init__(self,activation_fun,dropout,em_dim):
         super(Att_add_mp,self).__init__()

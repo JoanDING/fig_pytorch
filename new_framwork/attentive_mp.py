@@ -6,10 +6,6 @@ from base_att_module import *
 import pdb
 
 
-# ---------------------------------------------------------------------
-# overall handle iid and iatt------------------------------------------
-# ---------------------------------------------------------------------
-
 class att0(nn.Module):
     def __init__(self,opt):
         super(att0, self).__init__()
@@ -28,84 +24,34 @@ class att0(nn.Module):
         return em_out
 
 
-class att0_19_2layer(nn.Module):
+class att0_18(nn.Module):
     def __init__(self,opt):
-        super(att0_19_2layer, self).__init__()
-        self.att_layer1 = Att_add_mp(opt.activation_fun, opt.dropout, opt.em_dim)
-        self.att_layer2 = Att_add_mp(opt.activation_fun, opt.dropout, opt.em_dim)
-        self.mp_w1 = nn.Linear(opt.em_dim, opt.em_dim)
-        self.mp_w2 = nn.Linear(opt.em_dim, opt.em_dim)
-        if opt.activation_fun == 'leaky_relu':
-            self.activation_function = nn.LeakyReLU()
-        self.drop = nn.Dropout(opt.dropout)
-
-    def forward(self, embeddings):
-        u_em = embeddings[:,0,:]
-        i_em = embeddings[:,1:,:]
-        u_em = torch.unsqueeze(u_em,dim=-2)
-        u_em = u_em.expand_as(i_em)
-        ui = u_em * i_em
-
-        # first layer ---------------------------------
-        self.alphas1,value1 = self.att_layer1(i_em)
-        att_value1 = self.alphas1*value1
-        att_value1 = att_value1.sum(dim=-2)
-        att_value1 = self.mp_w1(att_value1)
-        ui_att_adj1 = ui + att_value1
-        em_out1 = self.activation_function(ui_att_adj1)
-        em_out1 = self.drop(em_out1)
-
-        # secon layer ---------------------------------
-        self.alphas,value = self.att_layer2(em_out1)
-        att_value = self.alphas*value
-        att_value = att_value.sum(dim=-2)
-        att_value = self.mp_w2(att_value)
-        ui_att_adj = em_out1 + att_value
-        em_out = self.activation_function(ui_att_adj)
-        em_out = self.drop(em_out)
-        return em_out
-
-class att0_18_2layer(nn.Module):
-    def __init__(self,opt):
-        super(att0_18_2layer, self).__init__()
+        super(att0_18, self).__init__()
         self.att_layer = Att_add_mp(opt.activation_fun, opt.dropout, opt.em_dim)
-        self.mp_w1 = nn.Linear(opt.em_dim, opt.em_dim)
-        self.mp_w2 = nn.Linear(opt.em_dim, opt.em_dim)
+        self.mp_w = nn.Linear(opt.em_dim, opt.em_dim)
         if opt.activation_fun == 'leaky_relu':
             self.activation_function = nn.LeakyReLU()
         self.drop = nn.Dropout(opt.dropout)
-        self.layer_norm = nn.LayerNorm(opt.em_dim)
 
     def forward(self, embeddings):
-        embeddings = self.layer_norm(embeddings)
         u_em = embeddings[:,0,:]
         i_em = embeddings[:,1:,:]
         u_em = torch.unsqueeze(u_em,dim=-2)
         u_em = u_em.expand_as(i_em)
         ui = u_em * i_em
-
-        # first layer ---------------------------------
-        self.alphas1,value1 = self.att_layer(i_em)
-        att_value1 = self.alphas1*value1
-        att_value1 = att_value1.sum(dim=-2)
-        att_value1 = self.mp_w1(att_value1)
-        ui_att_adj1 = ui + att_value1
-        em_out1 = self.activation_function(ui_att_adj1)
-        em_out1 = self.drop(em_out1)
-
-        # secon layer ---------------------------------
-        self.alphas,value = self.att_layer(em_out1)
+        self.alphas,value = self.att_layer(ui)
         att_value = self.alphas*value
         att_value = att_value.sum(dim=-2)
-        att_value = self.mp_w2(att_value)
-        ui_att_adj = em_out1 + att_value
+        att_value = self.mp_w(att_value)
+        ui_att_adj = ui + att_value
         em_out = self.activation_function(ui_att_adj)
         em_out = self.drop(em_out)
         return em_out
 
-class att0_16_2layer(nn.Module):
+
+class att0_16_104(nn.Module):
     def __init__(self,opt):
-        super(att0_16_2layer, self).__init__()
+        super(att0_16_104, self).__init__()
         self.att_layer = Att_add_mp(opt.activation_fun, opt.dropout, opt.em_dim)
         self.mp_w1 = nn.Linear(opt.em_dim, opt.em_dim)
         self.mp_w2 = nn.Linear(opt.em_dim, opt.em_dim)
@@ -119,22 +65,12 @@ class att0_16_2layer(nn.Module):
         u_em = torch.unsqueeze(u_em,dim=-2)
         u_em = u_em.expand_as(i_em)
         ui = u_em * i_em
-
-        # first layer ---------------------------------
-        self.alphas1,value1 = self.att_layer(i_em)
-        att_value1 = self.alphas1*value1
-        att_value1 = att_value1.sum(dim=-2)
-        att_value1 = self.mp_w1(att_value1)
-        ui_att_adj1 = ui + att_value1
-        em_out1 = self.activation_function(ui_att_adj1)
-        em_out1 = self.drop(em_out1)
-
-        # secon layer ---------------------------------
-        self.alphas,value = self.att_layer(em_out1)
+        self.alphas,value = self.att_layer(i_em)
         att_value = self.alphas*value
         att_value = att_value.sum(dim=-2)
-        att_value = self.mp_w2(att_value)
-        ui_att_adj = em_out1 + att_value
+        att_value = self.mp_w1(att_value)
+        att_ii = self.mp_w2(att_value + i_em)
+        ui_att_adj = ui + att_ii
         em_out = self.activation_function(ui_att_adj)
         em_out = self.drop(em_out)
         return em_out
