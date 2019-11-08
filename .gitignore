@@ -4,3 +4,4 @@ NeuRec-master
 NeuRec-master.zip
 new_framwork/old_codes/
 *.pyc
+./new_framwork/*.pyc
