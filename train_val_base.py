@@ -17,6 +17,7 @@ from eval_metrics.eval import *
 
 from amazon_men import *
 from amazon_women import *
+from pog import *
 from model_base import *
 
 
@@ -30,6 +31,11 @@ def train(opt):
     data_path = '/storage/yjding/djj_mask/amazon-men-group-cp_mask'
     data_train = MenTrain(data_path)
     data_test = MenTest(data_path)
+  elif opt.dataset == 'pog':
+    data_path = '/storage/yjding/djj_mask/pog'
+    data_train = PogTrain(data_path)
+    data_test = PogTest(data_path)
+
 
   t1 = time.time()
   data_loader_train = torch.utils.data.DataLoader(dataset=data_train,

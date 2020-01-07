@@ -1,7 +1,11 @@
 amazon-men-group-cp_mask
 amazon-women-group-cp_mask
+pog
+pog-full
+frappe
 NeuRec-master
 NeuRec-master.zip
 new_framwork/old_codes/
 *.pyc
 ./new_framwork/*.pyc
+./new_framwork/model/*
